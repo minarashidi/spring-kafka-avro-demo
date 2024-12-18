@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: spring-kafka-avro-demo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/product_catalog?prepareThreshold=0
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    hikari.connectionTimeout: 100000
+    hikari.idleTimeout: 600000
+    hikari.maxLifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true # Show SQL queries in the logs (optional)
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog-master.xml
+
+
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9091}
+#  sasl-enabled: true
+  consumer:
+    topic: product-events
+    autostart: true
+    groupId: product-events
+    autoOffsetReset: earliest
+    threads: 1
+
+  producer:
+    retries: 3
+    topic: avro-product-events
+
+glue-schema-registry:
+    aws:
+      region: eu-west-1
+      registry-name: product-catalog-registry
