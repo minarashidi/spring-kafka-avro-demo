@@ -16,6 +16,6 @@ public class EventController {
   @PostMapping("/events")
   public String sendMessage(@RequestBody Product product) {
     producer.sendProductEvent(product);
-    return "message published !";
+    return "event published!";
   }
 }

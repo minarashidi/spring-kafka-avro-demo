@@ -33,13 +33,10 @@ cd spring-kafka-avro-demo
 4. Launch the application using: `mvn spring-boot:run`
 5. To interact with the database, you can run:
     - `docker ps` to obtain the Container ID for the postgres image, then execute:
-    - `docker exec -it ab637ecc2ffb psql congestion_tax_calculator -U postgres`
-    - While in the container, run `\dt congestion_tax_calculator.` to view the list of created tables.
-      select * from congestion_tax_calculator.tariff_rule;
-The `docker-compose.yml` file sets up both Kafka and PostgreSQL for the application. Start the services with the following command:
-```bash
-docker-compose up -d
-```
+    - `docker exec -it <CONTAINER_ID> psql product_catalog -U postgres`
+    - While in the container, run `\dt product_catalog.` to view the list of created tables.
+      select * product_catalog.product;
+
 
 This will start the following:
 - **Kafka Broker** on `localhost:9091`

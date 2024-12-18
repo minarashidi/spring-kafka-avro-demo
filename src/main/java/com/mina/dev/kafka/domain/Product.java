@@ -1,7 +1,5 @@
 package com.mina.dev.kafka.domain;
 
-import static jakarta.persistence.GenerationType.SEQUENCE;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
