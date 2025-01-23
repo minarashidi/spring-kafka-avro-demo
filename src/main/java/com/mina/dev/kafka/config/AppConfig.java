@@ -24,6 +24,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.glue.GlueClient;
 
@@ -51,7 +52,6 @@ public class AppConfig {
     props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
     props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, List.of(CooperativeStickyAssignor.class));
-//    configureSasl(kafkaProperties, props);
 
     var factory = new ConcurrentKafkaListenerContainerFactory<String, String>();
     factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(props, StringDeserializer::new, StringDeserializer::new));
@@ -60,17 +60,14 @@ public class AppConfig {
   }
 
   @Bean
-  public AvroProductEventProducer avroProductEventProducer(KafkaTemplate<String, Object> analyticsKafkaTemplate,
+  public AvroProductEventProducer avroProductEventProducer(KafkaTemplate<String, Object> avroKafkaTemplate,
       KafkaProperties kafkaProperties) {
-    return new AvroProductEventProducer(analyticsKafkaTemplate, kafkaProperties.producer().topic()
+    return new AvroProductEventProducer(avroKafkaTemplate, kafkaProperties.producer().topic()
     );
   }
 
   @Bean
   KafkaTemplate<String, Object> avroKafkaTemplate(KafkaProperties kafkaProperties, GlueProperties glueProperties) {
-
-    System.setProperty("software.amazon.awssdk.http.service.impl", "software.amazon.awssdk.http.apache.ApacheSdkHttpService");
-
     var props = new HashMap<String, Object>();
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.bootstrapServers());
     props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, false);
@@ -78,29 +75,35 @@ public class AppConfig {
     props.put(AWSSchemaRegistryConstants.DATA_FORMAT, "AVRO");
     props.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, "false");
     props.put(AWSSchemaRegistryConstants.REGISTRY_NAME, glueProperties.registryName());
-//    configureSasl(kafkaProperties, props);
 
     var producerFactory = new DefaultKafkaProducerFactory<>(props, StringSerializer::new, GlueSchemaRegistryKafkaSerializer::new);
-
     return new KafkaTemplate<>(producerFactory);
   }
 
-//  @Bean
-//  public GlueSchemaUploader schemaUploader(KafkaProperties kafkaProperties, GlueProperties glueProperties) {
-//    var avroProductEvents = kafkaProperties.producer();
-//
-//    System.setProperty("software.amazon.awssdk.http.service.impl", "software.amazon.awssdk.http.apache.ApacheSdkHttpService");
-//
-//    var glueClient = GlueClient.builder()
-//        .region(Region.of(glueProperties.region()))
-//        .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
-//        .build();
-//
-//    var schemaMap = Map.of(
-//        avroProductEvents.topic(), ProductAvroDto.getClassSchema().toString()
-//    );
-//
-//    return new GlueSchemaUploader(glueClient, glueProperties.registryName(), schemaMap);
-//  }
+  @Bean
+  public GlueSchemaUploader schemaUploader(KafkaProperties kafkaProperties, GlueProperties glueProperties) {
+    // Validate GlueProperties
+    if (glueProperties.region() == null || glueProperties.registryName() == null) {
+      throw new IllegalArgumentException("Glue region and registry name must be configured.");
+    }
+
+    var avroProductEvents = kafkaProperties.producer();
+    log.info("Initializing GlueSchemaUploader for topic: {}", avroProductEvents.topic());
+
+    // Create the GlueClient with proper region and credentials
+    var glueClient = GlueClient.builder()
+        .region(Region.of(glueProperties.region()))
+        .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+        .httpClient(UrlConnectionHttpClient.create()) // Default HTTP client
+        .build();
+
+    // Map topic names to Avro schema definitions
+    var schemaMap = Map.of(
+        avroProductEvents.topic(), ProductAvroDto.getClassSchema().toString()
+    );
+
+    log.info("Schema map initialized: {}", schemaMap);
+    return new GlueSchemaUploader(glueClient, glueProperties.registryName(), schemaMap);
+  }
 
 }

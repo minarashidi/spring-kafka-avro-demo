@@ -35,7 +35,7 @@ cd spring-kafka-avro-demo
     - `docker ps` to obtain the Container ID for the postgres image, then execute:
     - `docker exec -it <CONTAINER_ID> psql product_catalog -U postgres`
     - While in the container, run `\dt product_catalog.` to view the list of created tables.
-      select * product_catalog.product;
+      `select * product_catalog.product;`
 
 
 This will start the following:
