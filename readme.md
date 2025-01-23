@@ -56,7 +56,7 @@ mvn clean package
 
 ### 4. Configure Application Properties
 
-The application is pre-configured to connect to Kafka and PostgreSQL. Ensure the following configuration in `application.yml` matches your setup:
+Ensure the following configuration in `application.yml` matches your setup:
 
 ```yaml
 spring:
@@ -74,7 +74,6 @@ spring:
 
 ### 5. Run the Application
 
-#### Using Maven
 You can run the application using Maven:
 ```bash
 mvn spring-boot:run
@@ -84,9 +83,7 @@ mvn spring-boot:run
 
 ### 6. Testing the Application
 
-## Testing the Application
-
-1. Publish a test product event to Kafka:
+Publish a test product event to Kafka:
    Use a Kafka producer or a CLI tool to send data to the configured topic. For example:
    
 ``` json
@@ -102,6 +99,4 @@ mvn spring-boot:run
 }
  ```
 
-2. Verify the following:
-- The consumer processes the event successfully without errors.
-- Product details are stored correctly in the PostgreSQL `product` table.
+Verify the consumer processes the event successfully without errors and product details are stored correctly in the `product` table.
